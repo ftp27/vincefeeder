@@ -1,9 +1,9 @@
 http:
   middlewares:
-    my-plausiblefeeder:
+    my-vincefeeder:
       plugin:
-        plausiblefeeder:
-          eventEndpoint: "http://plausible:8000/api/event"
+        vincefeeder:
+          eventEndpoint: "http://vince:8080/api/event"
           domains:
             - localhost
           reportExtensions:
@@ -12,6 +12,6 @@ http:
           reportAllResources: false
           reportAnyHost: false
           reportErrors: false
-          remoteIPFromHeader: "X-Forwarded-For"
+          remoteIPFromHeader: "X-Real-Ip"
           queueSize: 1000
           debugLogging: true

@@ -1,4 +1,4 @@
-package plausiblefeeder
+package vincefeeder
 
 // Utils, so we don't have any dependencies to make it easier for the traefik plugin.
 

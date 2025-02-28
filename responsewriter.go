@@ -1,4 +1,4 @@
-package plausiblefeeder
+package vincefeeder
 
 import (
 	"bufio"

@@ -1,4 +1,4 @@
-package plausiblefeeder
+package vincefeeder
 
 import (
 	"context"
@@ -77,10 +77,10 @@ type PlausibleEventFeeder struct {
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	// Check required values.
 	if config.EventEndpoint == "" {
-		return nil, errors.New("must configure event endpoint for plausiblefeeder")
+		return nil, errors.New("must configure event endpoint for vincefeeder")
 	}
 	if len(config.Domains) == 0 {
-		return nil, errors.New("must configure at least one domain for plausiblefeeder")
+		return nil, errors.New("must configure at least one domain for vincefeeder")
 	}
 
 	// Apply default values.
@@ -111,7 +111,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 	}
 
 	// Log the instantiation of the plugin, including configuration.
-	fmt.Fprintf(os.Stdout, "creating plausiblefeeder plugin %q with config: %+v\n", name, config)
+	fmt.Fprintf(os.Stdout, "creating vincefeeder plugin %q with config: %+v\n", name, config)
 
 	// Create instance and start worker.
 	pef := &PlausibleEventFeeder{

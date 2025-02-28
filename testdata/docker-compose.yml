@@ -22,14 +22,14 @@ services:
       # Trust headers of private IP ranges
       - "--entrypoints.http.forwardedHeaders.trustedIPs=127.0.0.0/8,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12"
       # Add plugin.
-      - "--experimental.localplugins.plausiblefeeder.modulename=github.com/safing/plausiblefeeder"
+      - "--experimental.localplugins.vincefeeder.modulename=github.com/ftp27/vincefeeder"
     ports:
       - "80:80"
       - "8000:8080"
     volumes:
       - ./traefik-dynamic.yml:/conf/traefik-dynamic.yml
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ..:/plugins-local/src/github.com/safing/plausiblefeeder
+      - ..:/plugins-local/src/github.com/ftp27/vincefeeder
 
   whoami:
     image: traefik/whoami
@@ -40,45 +40,18 @@ services:
       - "traefik.http.routers.whoami-http.rule=hostregexp(`{host:.+}`)"
       - "traefik.http.routers.whoami-http.entrypoints=http"
       # Enable plausible feeder
-      - "traefik.http.routers.whoami-http.middlewares=my-plausiblefeeder@file"
+      - "traefik.http.routers.whoami-http.middlewares=my-vincefeeder@file"
 
-  # Plausible
-
-  mail:
-    image: bytemark/smtp
+  vince:
+    image: ghcr.io/vinceanalytics/vince
     restart: always
-
-  plausible_db:
-    # supported versions are 12, 13, and 14
-    image: postgres:14-alpine
-    restart: always
-    volumes:
-      - /cache/postgres-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=postgres
-
-  plausible_events_db:
-    image: clickhouse/clickhouse-server:22.6-alpine
-    restart: always
-    volumes:
-      - ./cache/clickhouse-data:/var/lib/clickhouse
-      - ./clickhouse/clickhouse-config.xml:/etc/clickhouse-server/config.d/logging.xml:ro
-      - ./clickhouse/clickhouse-user-config.xml:/etc/clickhouse-server/users.d/logging.xml:ro
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
-
-  plausible:
-    image: plausible/analytics:v1.5
-    restart: always
-    command: sh -c "sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
-    depends_on:
-      - plausible_db
-      - plausible_events_db
-      - mail
+    command: serve
     ports:
-      - 8001:8000
+      - 8001:8080
     environment:
-      - "BASE_URL=http://localhost/"
-      - "SECRET_KEY_BASE=not_a_secret_that_is_at_least_64_bytes_long_so_we_need_to_add_some_more"
+      - VINCE_DOMAINS=localhost
+      - VINCE_PROFILE=true
+      - VINCE_ADMIN_NAME=acme
+      - VINCE_ADMIN_PASSWORD=1234
+    volumes:
+      - ./vince:/vince-data

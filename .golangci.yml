@@ -45,7 +45,7 @@ linters-settings:
     # put imports beginning with prefix after 3rd-party packages;
     # only support one prefix
     # if not set, use goimports.local-prefixes
-    local-prefixes: github.com/safing
+    local-prefixes: github.com/ftp27
   godox:
     # report any comments starting with keywords, this is useful for TODO or FIXME comments that
     # might be left in the code accidentally and should be resolved before merging

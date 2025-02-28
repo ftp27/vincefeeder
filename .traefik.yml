@@ -1,14 +1,14 @@
 # The name of your plugin as displayed in the Plugins Catalog web UI.
-displayName: Plausible Feeder
+displayName: Vince Feeder
 
 # For now, `middleware` is the only type available.
 type: middleware
 
 # The import path of your plugin.
-import: "github.com/safing/plausiblefeeder"
+import: "github.com/ftp27/vincefeeder"
 
 # A brief description of what your plugin is doing.
-summary: Feeds HTTP requests to plausible as pageview events.
+summary: Feeds HTTP requests to vince as pageview events.
 
 # Medias associated to the plugin (optional)
 # iconPath: foo/icon.png
@@ -18,7 +18,7 @@ summary: Feeds HTTP requests to plausible as pageview events.
 # This is mandatory,
 # and Plugins Catalog will try to execute the plugin with the data you provide as part of its startup validity tests.
 testData:
-  eventEndpoint: "http://plausible:8000/api/events"
+  eventEndpoint: "http://vince:8080/api/events"
   domains:
     - localhost
   reportExtensions:

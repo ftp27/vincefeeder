@@ -1,4 +1,4 @@
-package plausiblefeeder
+package vincefeeder
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -19,10 +18,10 @@ type PlausibleEvent struct {
 	remoteIP  net.IP `json:"-"` // Will marshal as "XremoteIP" if not explicitly ignored. WHY?
 
 	// Payload Data.
-	Domain     string `json:"domain"`
-	Name       string `json:"name"`
-	URL        string `json:"url"`
-	StatusCode string `json:"plausible-event-statuscode"`
+	Domain   string `json:"d"`
+	Name     string `json:"n"`
+	URL      string `json:"u"`
+	Refferer string `json:"r,omitempty"`
 }
 
 func (pef *PlausibleEventFeeder) submitToFeed(r *http.Request, statusCode int) {
@@ -77,6 +76,13 @@ func (pef *PlausibleEventFeeder) submitToFeed(r *http.Request, statusCode int) {
 			return
 		}
 	}
+	// Ensure URL has full path.
+	var url string
+	if r.TLS != nil {
+		url = "https://" + plausibleDomain + r.RequestURI
+	} else {
+		url = "http://" + plausibleDomain + r.RequestURI
+	}
 
 	// Create event and submit to queue.
 	event := &PlausibleEvent{
@@ -84,15 +90,15 @@ func (pef *PlausibleEventFeeder) submitToFeed(r *http.Request, statusCode int) {
 		userAgent: r.UserAgent(),
 		remoteIP:  remoteIP,
 		// Payload Data.
-		Domain:     plausibleDomain,
-		Name:       "pageview",
-		URL:        r.RequestURI,
-		StatusCode: strconv.Itoa(statusCode),
+		Domain:   plausibleDomain,
+		Name:     "pageview",
+		URL:      url,
+		Refferer: r.Referer(),
 	}
 	select {
 	case pef.queue <- event:
 	default:
-		fmt.Fprintf(os.Stderr, "plausiblefeeder plugin %q failed to submit event: queue full\n", pef.name)
+		fmt.Fprintf(os.Stderr, "vincefeeder plugin %q failed to submit event: queue full\n", pef.name)
 	}
 }
 
@@ -100,7 +106,7 @@ func (pef *PlausibleEventFeeder) startWorker(ctx context.Context) {
 	for {
 		err := pef.plausibleEventFeeder(ctx)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "plausiblefeeder plugin %q feed worker failed: %s\n", pef.name, err)
+			fmt.Fprintf(os.Stderr, "vincefeeder plugin %q feed worker failed: %s\n", pef.name, err)
 		} else {
 			return
 		}
@@ -124,7 +130,7 @@ func (pef *PlausibleEventFeeder) plausibleEventFeeder(ctx context.Context) (err 
 		// Wait for event.
 		select {
 		case <-ctx.Done():
-			fmt.Fprintf(os.Stderr, "plausiblefeeder plugin %q feed worker shutting down (canceled)\n", pef.name)
+			fmt.Fprintf(os.Stderr, "vincefeeder plugin %q feed worker shutting down (canceled)\n", pef.name)
 			return nil
 
 		case event := <-pef.queue:
@@ -138,7 +144,7 @@ func (pef *PlausibleEventFeeder) reportEventToPlausible(ctx context.Context, cli
 	// Create body.
 	payload, err := json.Marshal(event)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "plausiblefeeder plugin %q failed to marshal event: %s\n", pef.name, err)
+		fmt.Fprintf(os.Stderr, "vincefeeder plugin %q failed to marshal event: %s\n", pef.name, err)
 		return
 	}
 
@@ -150,7 +156,7 @@ func (pef *PlausibleEventFeeder) reportEventToPlausible(ctx context.Context, cli
 		bytes.NewReader(payload),
 	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "plausiblefeeder plugin %q failed to create http request: %s\n", pef.name, err)
+		fmt.Fprintf(os.Stderr, "vincefeeder plugin %q failed to create http request: %s\n", pef.name, err)
 		return
 	}
 	request.Header.Set("Content-Type", "application/json")
@@ -160,14 +166,14 @@ func (pef *PlausibleEventFeeder) reportEventToPlausible(ctx context.Context, cli
 	// Send to plausible.
 	resp, err := client.Do(request)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "plausiblefeeder plugin %q failed to send http request to plausible endpoint: %s\n", pef.name, err)
+		fmt.Fprintf(os.Stderr, "vincefeeder plugin %q failed to send http request to plausible endpoint: %s\n", pef.name, err)
 		return
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 	if resp.StatusCode != http.StatusAccepted {
-		fmt.Fprintf(os.Stderr, "plausiblefeeder plugin %q got unexpected status code from plausible endpoint: %s\n", pef.name, resp.Status)
+		fmt.Fprintf(os.Stderr, "vincefeeder plugin %q got unexpected status code from plausible endpoint: %s\n", pef.name, resp.Status)
 		return
 	}
 
